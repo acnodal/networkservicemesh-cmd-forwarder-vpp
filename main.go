@@ -22,6 +22,8 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"io/ioutil"
+	"net"
 	"os"
 	"os/signal"
 	"path"
@@ -37,6 +39,7 @@ import (
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"gopkg.in/yaml.v2"
 
 	registryapi "github.com/networkservicemesh/api/pkg/api/registry"
 	"github.com/networkservicemesh/sdk-k8s/pkg/tools/deviceplugin"
@@ -50,6 +53,7 @@ import (
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/cleanup"
 	registryclient "github.com/networkservicemesh/sdk/pkg/registry/chains/client"
 	"github.com/networkservicemesh/sdk/pkg/registry/common/sendfd"
+	sdkdebug "github.com/networkservicemesh/sdk/pkg/tools/debug"
 	"github.com/networkservicemesh/sdk/pkg/tools/grpcutils"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/networkservicemesh/sdk/pkg/tools/log/logruslogger"
@@ -67,6 +71,13 @@ import (
 	"github.com/networkservicemesh/cmd-forwarder-vpp/internal/devicecfg"
 	"github.com/networkservicemesh/cmd-forwarder-vpp/internal/vppinit"
 	"github.com/networkservicemesh/cmd-forwarder-vpp/internal/xconnectns"
+)
+
+const (
+	// If this file exists and we can parse it into a map[string]string
+	// then we'll use it to patch the tunnelIP. Usually it will be
+	// mounted from a configMap.
+	ipMapFile = "/etc/ipmap/ipmap.yaml"
 )
 
 func main() {
@@ -88,6 +99,7 @@ func main() {
 	// ********************************************************************************
 	logrus.SetFormatter(&nested.Formatter{})
 	ctx = log.WithLog(ctx, logruslogger.New(ctx, map[string]interface{}{"cmd": os.Args[0]}))
+	l := log.FromContext(ctx)
 
 	// ********************************************************************************
 	// Debug self if necessary
@@ -144,6 +156,35 @@ func main() {
 				log.FromContext(ctx).Error(err.Error())
 			}
 		}()
+	}
+
+	// ********************************************************************************
+	l.Infof("executing phase 1a: patch tunnelIP if " + ipMapFile + " exists")
+	// ********************************************************************************
+
+	l.Infof("TunnelIP from environment: %s", cfg.TunnelIP.String())
+
+	// Try to read the map from pod IPs (which are typically IPV4) to
+	// tunnel IPs (which can be IPV4 or IPV6).
+	buf, err := ioutil.ReadFile(ipMapFile)
+	if err == nil {
+		ipmap := map[string]string{}
+
+		// Try to parse the map. It's a simple string->string map.
+		err = yaml.Unmarshal(buf, &ipmap)
+		if err == nil {
+			newIP := net.ParseIP(ipmap[cfg.TunnelIP.String()])
+			if newIP != nil {
+				l.WithField("oldTunnelIP", cfg.TunnelIP).WithField("newTunnelIP", newIP).Info("Replacing tunnelIP from user-provided map")
+				cfg.TunnelIP = newIP
+			} else {
+				l.Debugf("can't parse ipmap value %s", ipmap[cfg.TunnelIP.String()])
+			}
+		} else {
+			l.Debug("can't unmarshal ipmap")
+		}
+	} else {
+		l.Debug("can't read ipmap")
 	}
 
 	// ********************************************************************************
@@ -254,6 +295,8 @@ func main() {
 		xconnectns.WithVxlanOptions(vxlan.WithPort(cfg.VxlanPort)),
 		xconnectns.WithDialOptions(dialOptions...),
 	)
+
+	l.Debug(sdkdebug.JSONify(endpoint))
 
 	log.FromContext(ctx).WithField("duration", time.Since(now)).Info("completed phase 7: create xconnect network service endpoint")
 

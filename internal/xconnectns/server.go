@@ -23,6 +23,7 @@ package xconnectns
 
 import (
 	"context"
+	"encoding/json"
 	"net"
 	"net/url"
 	"time"
@@ -45,6 +46,7 @@ import (
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/authorize"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/switchcase"
+	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	authmonitor "github.com/networkservicemesh/sdk/pkg/tools/monitorconnection/authorize"
 	"github.com/networkservicemesh/sdk/pkg/tools/token"
 )
@@ -85,10 +87,12 @@ func NewServer(
 		vppforwarder.WithVxlanOptions(xconnOpts.vxlanOpts...),
 		vppforwarder.WithDialOptions(xconnOpts.dialOpts...))
 	if sriovConfig == nil {
+		log.FromContext(ctx).Debug("+++++")
+		log.FromContext(ctx).Debug(vppForwarder)
 		return vppForwarder
 	}
 
-	return endpoint.Combine(func(servers []networkservice.NetworkServiceServer) networkservice.NetworkServiceServer {
+	combo := endpoint.Combine(func(servers []networkservice.NetworkServiceServer) networkservice.NetworkServiceServer {
 		vppForwarder := servers[0]
 		sriovForwarder := servers[1]
 		return mechanisms.NewServer(map[string]networkservice.NetworkServiceServer{
@@ -126,4 +130,10 @@ func NewServer(
 			xconnOpts.dialTimeout,
 			xconnOpts.dialOpts...),
 	)
+
+	bytes, _ := json.Marshal(combo)
+	log.FromContext(ctx).Debug("&&&&&")
+	log.FromContext(ctx).Debug(bytes)
+
+	return combo
 }
