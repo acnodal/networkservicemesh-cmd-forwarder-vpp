@@ -13,14 +13,14 @@ require (
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/edwarnicke/debug v1.0.0
 	github.com/edwarnicke/exechelper v1.0.3
-	github.com/edwarnicke/govpp v0.0.0-20220509171552-731995b8f574
+	github.com/edwarnicke/govpp v0.0.0-20221021110927-f85e734f437f
 	github.com/edwarnicke/grpcfd v1.1.2
 	github.com/edwarnicke/vpphelper v0.0.0-20210512223648-f914b171f679
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.2.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/networkservicemesh/api v1.6.0
-	github.com/networkservicemesh/sdk v0.5.1-0.20220918233301-4056e304e0dd
+	github.com/networkservicemesh/sdk v0.5.1-0.20221013082556-9ae27f8b63af
 	github.com/networkservicemesh/sdk-k8s v0.0.0-00010101000000-000000000000
 	github.com/networkservicemesh/sdk-sriov v0.0.0-20220822191621-dd40d88fe2c2
 	github.com/networkservicemesh/sdk-vpp v0.0.0-20220908135250-c597cc97bd8f
@@ -58,7 +58,7 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/lunixbochs/struc v0.0.0-20200521075829-a4cb8d33dbbe // indirect
-	github.com/networkservicemesh/sdk-kernel v0.0.0-20220908134711-c235a0bd4866 // indirect
+	github.com/networkservicemesh/sdk-kernel v0.0.0-20221013082925-354d38e71cde // indirect
 	github.com/open-policy-agent/opa v0.44.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
