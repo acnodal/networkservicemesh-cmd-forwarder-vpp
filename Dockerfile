@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y wget
 RUN wget --no-verbose --output-document=- https://github.com/spiffe/spire/releases/download/v1.2.2/spire-1.2.2-linux-x86_64-glibc.tar.gz | tar xzf - -C /bin --strip=2 spire-1.2.2/bin/spire-server spire-1.2.2/bin/spire-agent
 
 FROM go as build
+COPY ./build-tmp/api/ /api
+COPY ./build-tmp/sdk/ /sdk
+COPY ./build-tmp/sdk-k8s/ /sdk-k8s
 WORKDIR /build
 COPY go.mod go.sum ./
 COPY ./local ./local
